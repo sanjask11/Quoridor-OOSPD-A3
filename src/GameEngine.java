@@ -20,14 +20,14 @@ public class GameEngine {
     
     /**Entry point for the game*/
     public void start(){
-        String[] gameChoices = {"SlidingPuzzle", "DotsAndBoxes"};
+        String[] gameChoices = {"SlidingPuzzle", "DotsAndBoxes", "Quoridor"};
         menu.displayWelcome();
 
         while(true){
             // Determine game choice (0 for single-player Sliding Puzzle, 1 for multi-player Dots and Boxes)
             int gameChoice = getGameChoice();
             // Note: Assuming gameChoice 1 forces multiplayer for DotsAndBoxes
-            multiplayer = (gameChoice == 1); 
+            multiplayer = (gameChoice == 1) || (gameChoice == 2); 
 
             boolean playingSameGame = true;
             String currentGameName = gameChoices[gameChoice];
@@ -58,7 +58,7 @@ public class GameEngine {
         while(true){
             // Assuming getGameChoice asks for 0 or 1
             gameChoice = inputHandler.getGameChoice(); 
-            if(gameChoice == 0 || gameChoice == 1){
+            if(gameChoice == 0 || gameChoice == 1 || gameChoice == 2){
                 return gameChoice;
             } else {
                 menu.displayError("Not a valid game please try again!");
@@ -112,10 +112,14 @@ public class GameEngine {
         if(name.equals("SlidingPuzzle")){
             game = new SlidingPuzzle(menu, inputHandler);
             game.setPlayer(player1);
-        }else{
+        }else if(name.equals("DotsAndBoxes")){
             DotsAndBoxes dotsAndBoxes = new DotsAndBoxes(menu, inputHandler);
             dotsAndBoxes.setPlayer(player1, player2);
             game = dotsAndBoxes;
+        } else {
+            Quoridor quoridor = new Quoridor(menu, inputHandler);
+            quoridor.setPlayer(player1, player2);
+            game = quoridor;
         }
 
         game.initializeGame();

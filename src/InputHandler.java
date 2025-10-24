@@ -81,12 +81,13 @@ public class InputHandler {
         System.out.println("\nWhich game would you like to play?");
         System.out.println("0. Sliding Puzzle");
         System.out.println("1. Dots And Boxes");
+        System.out.println("2. Quoridor");
 
         System.out.print("\nYour choice: ");
         try{
             int input = Integer.parseInt(scanner.nextLine().trim());
             //change
-            if(input == 0 || input == 1){
+            if(input == 0 || input == 1 || input == 2){
                 return input;
             }
             return -2;

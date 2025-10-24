@@ -104,8 +104,8 @@ public class GameEngine {
         }
     }
     
-    /** * Creates the game and runs it based on the users choice.
-     * UPDATED to use game.getBoardDisplay() and menu.printBoard().
+    /*
+     * Creates the game and runs it based on the users choice.
      */
     private void playGame(String name){
         Game game;
@@ -122,12 +122,10 @@ public class GameEngine {
 
         int flag = 1;
         while(game.isActive(flag) && !game.isGameWon()){
-            // NEW LOGIC: Board display is fetched from the game and printed by the Menu
             menu.printBoard(game.getBoardDisplay()); 
             flag = game.makeMove();
         }
         
-        // Final board display regardless of win/quit
         menu.printBoard(game.getBoardDisplay());
         
         if(game.isGameWon()){

@@ -16,7 +16,7 @@ public class GameEngine {
     private Player player2;
     private boolean multiplayer = false;
 
-    // In-memory saved games (session only)
+    /** In-memory saved games session only*/
     private final Map<String, Game> savedGames = new HashMap<>();
 
     public GameEngine() {

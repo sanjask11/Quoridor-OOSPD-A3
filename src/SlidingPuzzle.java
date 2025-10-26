@@ -7,8 +7,6 @@ public class SlidingPuzzle extends Game {
     private int[] emptySpace = new int[2];
 
     // Board class inherited from abstract Game class
-
-
     public SlidingPuzzle(Menu menu, InputHandler inputHandler) {
         super(menu, inputHandler);
     }
@@ -103,7 +101,7 @@ public class SlidingPuzzle extends Game {
         return position;
     }
     
-    /** swap the tiles on the board */
+    /** swaps the tiles on the board */
     private void swapPieces(int[] tile1, int[] tile2) {
         Tile[][] pieces = board.getPieces(); 
         Tile temp = pieces[tile1[0]][tile1[1]];
@@ -126,7 +124,7 @@ public class SlidingPuzzle extends Game {
         return adjacent;
     }
     
-    /** Check if the board is solvable or not */
+    /** Checks if the board is solvable or not */
     public boolean isSolvable() {
         Tile[][] pieces = board.getPieces(); 
         List<Integer> tiles = new ArrayList<>();
@@ -159,7 +157,7 @@ public class SlidingPuzzle extends Game {
         }
     }
     
-    /** Check if user has achieved the task of the game by arranging the tiles in the correct order*/
+    /** Checks if the user has achieved the task of the game by arranging the tiles in the correct order*/
     public boolean isGameWon() {
         Tile[][] pieces = board.getPieces(); 
         int expectedValue = 1;

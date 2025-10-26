@@ -16,12 +16,8 @@ public class Quoridor extends Game {
     private int walls1 = INITIAL_WALLS;
     private int walls2 = INITIAL_WALLS;
     
-    // Game-specific state: Wall placement status (0=unclaimed, 1=wall present)
-    // hWalls: 8 rows (between rows 0-8) by 9 columns. A wall spans 2 columns (e.g., c, c+1)
-    private int[][] hWalls = new int[ROWS - 1][COLUMNS]; 
-    
-    // vWalls: 9 rows by 8 columns (between columns 0-8). A wall spans 2 rows (e.g., r, r+1)
-    private int[][] vWalls = new int[ROWS][COLUMNS - 1];
+    private Wall[][] hWalls = new Wall[ROWS - 1][COLUMNS]; 
+    private Wall[][] vWalls = new Wall[ROWS][COLUMNS - 1];
 
     public Quoridor(Menu menu, InputHandler inputHandler) {
         super(menu, inputHandler);
@@ -46,7 +42,19 @@ public class Quoridor extends Game {
         walls1 = INITIAL_WALLS;
         walls2 = INITIAL_WALLS;
         
-        // Arrays are initialized to 0 by default, so hWalls and vWalls are ready.
+
+        //initialize vertical and horizontal wall arrays
+        for(int r = 0; r < ROWS - 1; r++){
+            for(int c = 0; c < COLUMNS; c++){
+                hWalls[r][c] = new Wall('H');
+            }
+        }
+    
+        for(int r = 0; r < ROWS; r++){
+            for(int c = 0; c < COLUMNS - 1; c++){
+                vWalls[r][c] = new Wall('V');
+            }
+        }
 
         setGameActive(true);
 
@@ -85,16 +93,16 @@ public class Quoridor extends Game {
                 
                 // Overlay Wall State (Edges)
                 // Top Edge (r-1, c) is the hWall[r-1][c] slot
-                if (r > 0) info.topEdge = hWalls[r - 1][c] == 1;
+                if (r > 0) info.topEdge = hWalls[r - 1][c].isPresent();
                 
                 // Bottom Edge (r, c) is the hWall[r][c] slot
-                if (r < ROWS - 1) info.bottomEdge = hWalls[r][c] == 1; 
+                if (r < ROWS - 1) info.bottomEdge = hWalls[r][c].isPresent();
 
                 // Left Edge (r, c-1) is the vWall[r][c-1] slot
-                if (c > 0) info.leftEdge = vWalls[r][c - 1] == 1;
+                if (c > 0) info.leftEdge = vWalls[r][c - 1].isPresent();
                 
                 // Right Edge (r, c) is the vWall[r][c] slot
-                if (c < COLUMNS - 1) info.rightEdge = vWalls[r][c] == 1;
+                if (c < COLUMNS - 1) info.rightEdge = vWalls[r][c].isPresent();
                 
                 grid[r][c] = info;
             }
@@ -213,18 +221,17 @@ public class Quoridor extends Game {
     private boolean isWallBlocking(int r1, int c1, int r2, int c2) {
         if (r1 == r2) { // Horizontal move (c1 -> c2)
             int minC = Math.min(c1, c2);
-            // Check vertical wall slot between r1 and minC
-            return vWalls[r1][minC] == 1;
+            return vWalls[r1][minC].isPresent(); // Check vertical wall slot
+
         } else if (c1 == c2) { // Vertical move (r1 -> r2)
             int minR = Math.min(r1, r2);
-            // Check horizontal wall slot between minR and c1
-            return hWalls[minR][c1] == 1;
-        }
-        return false; // Should not happen with simple movement
+            return hWalls[minR][c1].isPresent(); // Check horizontal wall slot
     }
-
+    return false;
+}
     private boolean tryPlaceWall(char orientation, int r, int c) {
         int wallCount = current == 0 ? walls1 : walls2;
+        int ownerId = current == 0 ? 1 : 2;
         
         if (wallCount <= 0) {
             menu.displayError("No walls remaining.");
@@ -238,11 +245,11 @@ public class Quoridor extends Game {
 
         // Wall placement (a wall is 2 slots long)
         if (orientation == 'H') {
-            hWalls[r][c] = 1;
-            hWalls[r][c + 1] = 1; // Wall spans c and c+1
+            hWalls[r][c].placeWall(ownerId);
+            hWalls[r][c + 1].placeWall(ownerId); // Wall spans c and c+1
         } else { // 'V'
-            vWalls[r][c] = 1;
-            vWalls[r + 1][c] = 1; // Wall spans r and r+1
+            vWalls[r][c].placeWall(ownerId);
+            vWalls[r + 1][c].placeWall(ownerId); // Wall spans r and r+1
         }
         
         // Commit wall placement
@@ -261,12 +268,12 @@ public class Quoridor extends Game {
                 return false;
             }
             // Overlap check (needs 2 consecutive slots to be empty)
-            if (hWalls[r][c] == 1 || hWalls[r][c + 1] == 1) {
+            if (hWalls[r][c].isPresent() || hWalls[r][c + 1].isPresent()) {
                 menu.displayError("Wall overlaps an existing wall.");
                 return false;
             }
             // Crossover check (vertical wall must not intersect at r, c)
-            if (vWalls[r][c] == 1 && vWalls[r + 1][c] == 1) {
+            if (vWalls[r][c].isPresent() && vWalls[r + 1][c].isPresent()) {
                  menu.displayError("Wall cannot cross an existing vertical wall.");
                  return false;
             }
@@ -277,12 +284,12 @@ public class Quoridor extends Game {
                 return false;
             }
             // Overlap check (needs 2 consecutive slots to be empty)
-            if (vWalls[r][c] == 1 || vWalls[r + 1][c] == 1) {
+            if (vWalls[r][c].isPresent() || vWalls[r + 1][c].isPresent()) {
                 menu.displayError("Wall overlaps an existing wall.");
                 return false;
             }
             // Crossover check
-            if (hWalls[r][c] == 1 && hWalls[r][c + 1] == 1) {
+            if (hWalls[r][c].isPresent() && hWalls[r][c + 1].isPresent()) {
                  menu.displayError("Wall cannot cross an existing horizontal wall.");
                  return false;
             }

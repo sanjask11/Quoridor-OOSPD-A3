@@ -196,37 +196,35 @@ public class SlidingPuzzle extends Game {
         }
         return false;
     }
-    
-    /** Executes the players move */
+
+
     public int makeMove() {
-        String input = inputHandler.getMove(player, ", which tile do you want to slide to the empty space?");
-
-        if (input.equalsIgnoreCase("q")) {
-            return -1;
-        }
-
-        int validMove = 0;
+        String input = inputHandler.getMove(player, ", which tile do you want to slide to the empty space? ");
+        if (input.equalsIgnoreCase("q")) return -1;
         try {
-            validMove = Integer.parseInt(input);
+            int tileValue = Integer.parseInt(input);
+            return makeMoveWithValue(tileValue);
         } catch (NumberFormatException e) {
             menu.displayError("Please enter a valid piece!");
             return 1;
         }
-
+    }
+    private int makeMoveWithValue(int validMove) {
         if (!isValidMove(validMove)) {
             menu.displayError("Please enter a valid piece");
             return 1;
         }
 
         List<int[]> adjacentPieces = getAdjacentPieces(emptySpace[0], emptySpace[1]);
-        Tile[][] pieces = board.getPieces(); 
+        Tile[][] pieces = board.getPieces();
         int[] movePiece = new int[2];
-        
+
         for (int[] adjacentPiece : adjacentPieces) {
             if (pieces[adjacentPiece[0]][adjacentPiece[1]].value.equals(String.valueOf(validMove))) {
                 movePiece = adjacentPiece;
             }
         }
+
         int[] temp = movePiece;
         swapPieces(emptySpace, movePiece);
         emptySpace = temp;
@@ -258,4 +256,19 @@ public class SlidingPuzzle extends Game {
     protected void setGameActive(boolean var1) {
         this.gameActive = var1;
     }
+
+    @Override
+    public int makeMoveFromInput(String command) {
+        if (command.equalsIgnoreCase("p") || command.equalsIgnoreCase("pause")) {
+            return 1; // Pause handled by GameEngine
+        }
+        try {
+            int tileValue = Integer.parseInt(command);
+            return makeMoveWithValue(tileValue); // We'll refactor your logic slightly
+        } catch (NumberFormatException e) {
+            menu.displayMessage("Invalid input. Please enter a number or 'p' to pause.");
+            return 1;
+        }
+    }
+
 }

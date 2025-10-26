@@ -97,4 +97,57 @@ public class Quoridor extends Game {
         }
         return '?';
     }
+    @Override
+    public int makeMoveFromInput(String command) {
+        if (command.equalsIgnoreCase("p") || command.equalsIgnoreCase("pause")) {
+            return 1; // handled by GameEngine
+        }
+
+        Player player = current == 0 ? player1 : player2;
+        String input = command.trim();
+
+        if (input.equalsIgnoreCase("q")) {
+            return -1;
+        }
+
+        String[] parts = input.split("\\s+");
+        if (parts.length == 0) {
+            menu.displayError("Please enter a move.");
+            return 1;
+        }
+
+        char moveType = Character.toUpperCase(parts[0].charAt(0));
+
+        if (moveType == 'M') {
+            if (parts.length != 2) {
+                menu.displayError("Invalid Move format. Use: M [U/D/L/R]");
+                return 1;
+            }
+            char direction = Character.toUpperCase(parts[1].charAt(0));
+            if (tryMovePawnDirection(direction)) {
+                current = 1 - current;
+            }
+            return 1;
+
+        } else if (moveType == 'H' || moveType == 'V') {
+            if (parts.length != 3) {
+                menu.displayError("Invalid Wall format. Use: H/V r c");
+                return 1;
+            }
+            try {
+                int r = Integer.parseInt(parts[1]) - 1;
+                int c = Integer.parseInt(parts[2]) - 1;
+                if (tryPlaceWall(moveType, r, c)) {
+                    current = 1 - current;
+                }
+            } catch (NumberFormatException e) {
+                menu.displayError("Coordinates must be numbers for wall placement.");
+            }
+            return 1;
+
+        } else {
+            menu.displayError("Invalid move type. Use M, H, or V.");
+            return 1;
+        }
+    }
 }

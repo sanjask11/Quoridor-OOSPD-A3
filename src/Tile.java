@@ -3,19 +3,14 @@
  * It inherits from the Piece class and stores the tiles values
  */
 public class Tile {
-    // -------------------------------------
+
     // For Sliding Puzzle
-    // -------------------------------------
     public String value; 
     
-    // -------------------------------------
-    // For Dots and Boxes (This Tile represents one Box)
-    // -------------------------------------
+    // For Dots and Boxes, here this tile represents one box
     public int boxOwner = -1; 
     
-    // -------------------------------------
-    // Visual State Container (replaces CellDisplay)
-    // -------------------------------------
+    // For Visual State Container, replaces the cell display
     public static class DisplayInfo {
         public boolean topEdge = false;
         public boolean bottomEdge = false;
@@ -24,12 +19,12 @@ public class Tile {
         public String centerContent = " ";
     }
 
-    // Constructor for Sliding Puzzle (value is the tile number)
+    // Constructor for Sliding Puzzle, here the value is the tile number
     public Tile(String value) {
         this.value = value;
     }
 
-    // Constructor for Dots and Boxes (initializes box state)
+    // Constructor for Dots and Boxes, it initializes the box state
     public Tile() {
         this.value = "Box"; // Differentiator for game logic
     }

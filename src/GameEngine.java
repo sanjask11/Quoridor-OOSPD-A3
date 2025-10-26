@@ -1,10 +1,13 @@
 import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This java class serves as the main controller of all the games
  * It manages the game setup, inputs, the player setup and the entire game loop.
  * Now based on which game the user chooses from the main menu this class launches the respective game
  */
+
 
 public class GameEngine {
     private final Menu menu;
@@ -13,129 +16,192 @@ public class GameEngine {
     private Player player2;
     private boolean multiplayer = false;
 
-    public GameEngine(){
+    // In-memory saved games (session only)
+    private final Map<String, Game> savedGames = new HashMap<>();
+
+    public GameEngine() {
         this.menu = new Menu();
         this.inputHandler = new InputHandler();
     }
-    
-    /**Entry point for the game*/
-    public void start(){
+
+    /** Entry point for the arcade */
+    public void start() {
         String[] gameChoices = {"SlidingPuzzle", "DotsAndBoxes", "Quoridor"};
         menu.displayWelcome();
 
-        while(true){
-            // Determine game choice (0 for single-player Sliding Puzzle, 1 for multi-player Dots and Boxes)
+        while (true) {
             int gameChoice = getGameChoice();
-            // Note: Assuming gameChoice 1 forces multiplayer for DotsAndBoxes
-            multiplayer = (gameChoice == 1) || (gameChoice == 2); 
-
-            boolean playingSameGame = true;
+            multiplayer = (gameChoice == 1) || (gameChoice == 2);
             String currentGameName = gameChoices[gameChoice];
+            boolean playingSameGame = true;
 
-            while(playingSameGame) {
+            while (playingSameGame) {
                 setupPlayer(multiplayer);
                 playGame(currentGameName);
 
                 int nextAction = promptNextAction();
-
-                if(nextAction == 3) {
-                    // Quit
+                if (nextAction == 3) {
                     System.out.println("\nThank you for playing!");
                     inputHandler.close();
                     return;
-                } else if(nextAction == 2) {
-                    // Play different game
+                } else if (nextAction == 2) {
                     playingSameGame = false;
                 }
-                // If nextAction == 1, continue inner loop (play same game)
             }
         }
     }
-    
-    /** Gets game choice  */
+
+    /** Gets valid game choice */
     private int getGameChoice() {
         int gameChoice;
-        while(true){
-            // Assuming getGameChoice asks for 0 or 1
-            gameChoice = inputHandler.getGameChoice(); 
-            if(gameChoice == 0 || gameChoice == 1 || gameChoice == 2){
+        while (true) {
+            gameChoice = inputHandler.getGameChoice();
+            if (gameChoice == 0 || gameChoice == 1 || gameChoice == 2)
                 return gameChoice;
-            } else {
-                menu.displayError("Not a valid game please try again!");
-            }
+            menu.displayError("Not a valid game please try again!");
         }
     }
-    
-    /** Prompts for choice after quit */
+
+    /** Handles next action after a game ends or is paused */
     private int promptNextAction() {
         menu.displayMessage("\nWhat would you like to do?");
         menu.displayMessage("1. Play again (same game)");
         menu.displayMessage("2. Play a different game");
         menu.displayMessage("3. Quit");
 
-        int choice;
-        while(true) {
+        while (true) {
             String input = inputHandler.getInput("Enter your choice (1-3): ");
             try {
-                choice = Integer.parseInt(input);
-                if(choice >= 1 && choice <= 3) {
-                    return choice;
-                } else {
-                    menu.displayError("Please enter 1, 2, or 3");
+                int choice = Integer.parseInt(input);
+                if (choice >= 1 && choice <= 3) return choice;
+            } catch (NumberFormatException ignored) {}
+            menu.displayError("Please enter 1, 2, or 3");
+        }
+    }
+
+    /** Sets up players */
+    private void setupPlayer(boolean multiplayer) {
+        if (multiplayer) {
+            player1 = new Player(inputHandler.getPlayerName(true, "Player 1"));
+            player2 = new Player(inputHandler.getPlayerName(true, "Player 2"));
+        } else {
+            player1 = new Player(inputHandler.getPlayerName(false, "Player 1"));
+        }
+    }
+
+    /** Runs the selected game, with support for pause/resume */
+    private void playGame(String name) {
+        Game game;
+
+        // Resume existing saved game if available
+        if (savedGames.containsKey(name)) {
+            boolean resume = inputHandler.askYesNo(
+                    "\nA saved " + name + " game was found. Resume it?");
+            if (resume) {
+                game = savedGames.remove(name);
+                System.out.println("Resuming your previous game...\n");
+            } else {
+                savedGames.remove(name);
+                game = createNewGame(name);
+                game.initializeGame();
+            }
+        } else {
+            game = createNewGame(name);
+            game.initializeGame();
+        }
+
+        int flag = 1;
+        while (game.isActive(flag) && !game.isGameWon()) {
+            menu.printBoard(game.getBoardDisplay());
+
+            String command = inputHandler.getInput(
+                    "(Enter move or 'p' to pause): ").trim();
+
+            if (command.equalsIgnoreCase("p") || command.equalsIgnoreCase("pause")) {
+                handlePauseMenu(name, game);
+                return; // exit back to main menu
+            }
+
+            flag = game.makeMoveFromInput(command);
+        }
+
+        menu.printBoard(game.getBoardDisplay());
+        if (game.isGameWon()) {
+            game.displayVictory();
+            savedGames.remove(name); // clear any saved copy
+        } else {
+            game.displaySummary();
+        }
+    }
+
+    /** Handles pause menu options */
+    private void handlePauseMenu(String gameName, Game game) {
+        System.out.println("\n=== Game Paused ===");
+        System.out.println("1. Resume");
+        System.out.println("2. Save and return to main menu");
+        System.out.println("3. Quit game");
+
+        while (true) {
+            String input = inputHandler.getInput("Choice: ").trim();
+            switch (input) {
+                case "1" -> {
+                    System.out.println("Resuming game...\n");
+                    runGameLoop(gameName, game);
+                    return;
                 }
-            } catch (NumberFormatException e) {
-                menu.displayError("Please enter a valid number");
+                case "2" -> {
+                    savedGames.put(gameName, game);
+                    System.out.println("Game saved. Returning to main menu...");
+                    return;
+                }
+                case "3" -> {
+                    System.out.println("Exiting game. Goodbye!");
+                    System.exit(0);
+                }
+                default -> System.out.println("Please enter 1, 2, or 3.");
             }
         }
     }
-    
-    /** Prompts player details */
-    private void setupPlayer(boolean multiplayer){
-        if (multiplayer) {
-            String name = inputHandler.getPlayerName(multiplayer, "Player 1");
-            player1 = new Player(name);
 
-            name = inputHandler.getPlayerName(multiplayer, "Player 2");
-            player2 = new Player(name);
+    /** Resumes a game loop after resuming */
+    private void runGameLoop(String name, Game game) {
+        int flag = 1;
+        while (game.isActive(flag) && !game.isGameWon()) {
+            menu.printBoard(game.getBoardDisplay());
+            String command = inputHandler.getInput(
+                    "(Enter move or 'p' to pause): ").trim();
 
-        } else{
-            String name = inputHandler.getPlayerName(multiplayer, "Player 1");
-            player1 = new Player(name);
+            if (command.equalsIgnoreCase("p") || command.equalsIgnoreCase("pause")) {
+                handlePauseMenu(name, game);
+                return;
+            }
+
+            flag = game.makeMoveFromInput(command);
+        }
+
+        menu.printBoard(game.getBoardDisplay());
+        if (game.isGameWon()) {
+            game.displayVictory();
+            savedGames.remove(name);
+        } else {
+            game.displaySummary();
         }
     }
-    
-    /*
-     * Creates the game and runs it based on the users choice.
-     */
-    private void playGame(String name){
-        Game game;
-        if(name.equals("SlidingPuzzle")){
-            game = new SlidingPuzzle(menu, inputHandler);
-            game.setPlayer(player1);
-        }else if(name.equals("DotsAndBoxes")){
-            DotsAndBoxes dotsAndBoxes = new DotsAndBoxes(menu, inputHandler);
-            dotsAndBoxes.setPlayer(player1, player2);
-            game = dotsAndBoxes;
+
+    /** Factory method for new game creation */
+    private Game createNewGame(String name) {
+        if (name.equals("SlidingPuzzle")) {
+            SlidingPuzzle g = new SlidingPuzzle(menu, inputHandler);
+            g.setPlayer(player1);
+            return g;
+        } else if (name.equals("DotsAndBoxes")) {
+            DotsAndBoxes g = new DotsAndBoxes(menu, inputHandler);
+            g.setPlayer(player1, player2);
+            return g;
         } else {
-            Quoridor quoridor = new Quoridor(menu, inputHandler);
-            quoridor.setPlayer(player1, player2);
-            game = quoridor;
-        }
-
-        game.initializeGame();
-
-        int flag = 1;
-        while(game.isActive(flag) && !game.isGameWon()){
-            menu.printBoard(game.getBoardDisplay()); 
-            flag = game.makeMove();
-        }
-        
-        menu.printBoard(game.getBoardDisplay());
-        
-        if(game.isGameWon()){
-            game.displayVictory();
-        } else{
-            game.displaySummary();
+            Quoridor g = new Quoridor(menu, inputHandler);
+            g.setPlayer(player1, player2);
+            return g;
         }
     }
 }

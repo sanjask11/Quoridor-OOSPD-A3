@@ -296,4 +296,42 @@ public class DotsAndBoxes extends Game {
             return null;
         }
     }
+    @Override
+    public int makeMoveFromInput(String command) {
+        if (command.equalsIgnoreCase("p") || command.equalsIgnoreCase("pause")) {
+            return 1; // Pause handled in engine
+        }
+
+        Player player = current == 0 ? player1 : player2;
+        String input = command.trim(); // use the already-entered input, not scanner
+
+        if (input.equalsIgnoreCase("q")) {
+            return -1;
+        }
+
+        Move mv = parseOneIndexed(input, rows, columns);
+
+        if (mv == null) {
+            menu.displayMessage("Could not parse/out of range.");
+            return 1;
+        }
+
+        if (!canClaim(mv.orient, mv.r0, mv.c0)) {
+            menu.displayMessage("Illegal move (off board or already claimed).");
+            return 1;
+        }
+
+        int made = claim(mv.orient, mv.r0, mv.c0, current);
+
+        if (made > 0) {
+            if (current == 0) player1.addScore(made);
+            else player2.addScore(made);
+            menu.displayMessage(player.getName() + " closed " + made + " box" + (made == 1 ? "" : "es") + " and goes again!");
+        } else {
+            current = 1 - current;
+        }
+
+        displayScore();
+        return 1;
+    }
 }

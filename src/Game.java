@@ -3,7 +3,7 @@
  * Each game extends this base to fulfill all the functionalities of the game
  */
 
-abstract class Game {
+abstract class Game implements Saveable{
     protected Board board;
     protected Player player;
     protected Menu menu;
@@ -18,7 +18,7 @@ abstract class Game {
 
     public abstract void initializeGame();
     public abstract boolean isGameWon();
-
+    public abstract int makeMoveFromInput(String command);
     public abstract int makeMove();
     public abstract void displayVictory();
     public abstract void displaySummary();
@@ -35,6 +35,21 @@ abstract class Game {
 
     protected void setGameActive(boolean active){
         this.gameActive = active;
+    }
+    @Override
+    public GameState saveState() {
+        GameState state = new GameState();
+        state.boardData = board.getPieces();
+        state.gameActive = gameActive;
+        return state;
+    }
+
+    @Override
+    public void loadState(GameState state) {
+        if (state.boardData instanceof Tile[][] tiles) {
+            board.setPieces(tiles);
+        }
+        this.gameActive = state.gameActive;
     }
 
 }
